@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBox - Ultra Glass English Edition</title>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --ultra-glass: rgba(255, 255, 255, 0.05);
+            --blur: blur(25px);
+            --accent: #00f2fe;
+            --border: rgba(255, 255, 255, 0.2);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            color: white; overflow: hidden;
+        }
+
+        /* --- AUTHENTICATION SECTION --- */
+        #auth-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            background: inherit; z-index: 1000;
+        }
+        .auth-card {
+            background: var(--glass); backdrop-filter: var(--blur);
+            padding: 40px; border-radius: 20px; border: 1px solid var(--border);
+            width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .auth-card input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05); color: white; outline: none; box-sizing: border-box;
+        }
+        .auth-card button {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            background: var(--accent); color: #000; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .auth-card button:hover { opacity: 0.8; transform: scale(1.02); }
+
+        /* --- DASHBOARD SECTION --- */
+        #dashboard { display: none; height: 100vh; position: relative; }
+
+        .footer-bar {
+            position: absolute; bottom: 0; width: 100%; height: 75px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(15px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 30px; box-sizing: border-box; border-top: 1px solid var(--border);
+        }
+        .footer-item { text-align: center; cursor: pointer; color: white; transition: 0.3s; }
+        .footer-item:hover { color: var(--accent); }
+        
+        .refresh-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.6s ease; display: inline-block; }
+        .refresh-icon.spinning { transform: rotate(360deg); }
+
+        /* --- WINDOWS SYSTEM --- */
+        .full-screen-window {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ultra-glass); backdrop-filter: blur(45px);
+            display: none; z-index: 500; padding: 50px; box-sizing: border-box;
+        }
+        .window-header { 
+            font-size: 32px; font-weight: bold; margin-bottom: 20px; 
+            border-bottom: 1px solid var(--border); padding-bottom: 10px; 
+            display: flex; justify-content: space-between;
+        }
+
+        .settings-container { display: flex; flex-direction: column; gap: 15px; max-width: 600px; }
+        .setting-line { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03); 
+            border: 1px solid transparent; transition: 0.3s;
+        }
+        .setting-line:hover { border-color: var(--border); background: rgba(255,255,255,0.07); }
+        
+        /* Add User Interface */
+        .add-user-box { 
+            margin-top: 30px; padding: 25px; border-radius: 15px; 
+            background: rgba(0, 242, 254, 0.05); border: 1px dashed var(--accent); 
+        }
+        .add-user-box input { 
+            padding: 12px; border-radius: 8px; border: 1px solid var(--border); 
+            background: rgba(0,0,0,0.2); color: white; width: 70%; outline: none;
+        }
+        .add-user-box button { 
+            padding: 12px 20px; border-radius: 8px; background: var(--accent); 
+            border: none; font-weight: bold; cursor: pointer; 
+        }
+
+        .close-btn { font-size: 35px; cursor: pointer; line-height: 30px; }
+        .hidden { display: none; }
+
+        #contact-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px; margin-top: 20px;
+        }
+        .contact-card {
+            background: var(--glass); padding: 15px; border-radius: 12px;
+            text-align: center; border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-container">
+        <div class="auth-card" id="login-box">
+            <h2>ChatBox Login</h2>
+            <input type="email" id="l-email" placeholder="Gmail Address">
+            <input type="password" id="l-pass" placeholder="Password">
+            <button onclick="loginSuccess()">Login</button>
+            <p onclick="toggleAuth()" style="cursor:pointer; font-size:13px; margin-top:15px; color: var(--accent);">Need an account? Register</p>
+        </div>
+
+        <div class="auth-card hidden" id="register-box">
+            <h2>Create Account</h2>
+            <input type="text" id="reg-name" placeholder="Full Name">
+            <input type="email" id="reg-email" placeholder="Gmail Address">
+            <input type="password" id="reg-pass" placeholder="Create Password">
+            <button onclick="sendOTP()">Get 6-Digit Code</button>
+            <p onclick="toggleAuth()" style="cursor:pointer; font-size:13px; margin-top:15px; color: var(--accent);">Already registered? Login</p>
+        </div>
+
+        <div class="auth-card hidden" id="otp-box">
+            <h2>Verify Email</h2>
+            <p style="font-size: 13px; opacity: 0.7;">Enter the 6-digit code sent to your Gmail</p>
+            <input type="text" maxlength="6" id="otp-val" style="text-align: center; letter-spacing: 8px; font-size: 20px;">
+            <button onclick="loginSuccess()">Verify & Continue</button>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <div style="padding: 40px;">
+            <h1 id="welcome-text">Welcome!</h1>
+            <p style="opacity: 0.8;">Your secure dashboard is active.</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
+            
+            <h3>My Contacts</h3>
+            <div id="contact-list">
+                <p id="no-contacts" style="opacity: 0.4; grid-column: 1/-1;">No contacts added yet. Go to Settings to add users.</p>
+            </div>
+        </div>
+
+        <div class="footer-bar">
+            <div class="footer-item" onclick="openUpdates()">
+                <div class="refresh-icon" id="upd-icon">🔄</div>
+                <div style="font-size: 11px;">Update</div>
+            </div>
+
+            <div style="display: flex; gap: 40px;">
+                <div class="footer-item" onclick="openCalls()">
+                    <div style="font-size: 24px;">📞</div>
+                    <div style="font-size: 11px;">Calls</div>
+                </div>
+                <div class="footer-item" onclick="openSettings()">
+                    <div style="font-size: 24px; color: var(--accent);">⚙️</div>
+                    <div style="font-size: 11px;">Settings</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-window" class="full-screen-window">
+        <div class="window-header">
+            <span>Settings</span>
+            <span class="close-btn" onclick="closeWindow('settings-window')">&times;</span>
+        </div>
+        
+        <div class="settings-container">
+            <div class="setting-line"><span>Desktop Notifications</span> <input type="checkbox" checked></div>
+            <div class="setting-line"><span>Private Profile</span> <input type="checkbox"></div>
+            <div class="setting-line"><span>Show Online Status</span> <input type="checkbox" checked></div>
+
+            <div class="add-user-box">
+                <h4>Add New Contact</h4>
+                <p style="font-size: 12px; margin-bottom: 15px; opacity: 0.8;">Search for a user by their registered Gmail ID to start chatting.</p>
+                <div style="display: flex; gap: 10px;">
+                    <input type="email" id="search-email" placeholder="user@gmail.com">
+                    <button onclick="addUser()">Add User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUTHENTICATION LOGIC ---
+        function toggleAuth() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('register-box').classList.toggle('hidden');
+        }
+
+        function sendOTP() {
+            const email = document.getElementById('reg-email').value;
+            if(!email.includes("@")) return alert("Please enter a valid Gmail address");
+            document.getElementById('register-box').classList.add('hidden');
+            document.getElementById('otp-box').classList.remove('hidden');
+        }
+
+        function loginSuccess() {
+            const userName = document.getElementById('reg-name').value || "User";
+            document.getElementById('welcome-text').innerText = "Welcome, " + userName + "!";
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        // --- DASHBOARD ACTIONS ---
+        function openSettings() { document.getElementById('settings-window').style.display = 'block'; }
+        function closeWindow(id) { document.getElementById(id).style.display = 'none'; }
+
+        function openUpdates() {
+            const icon = document.getElementById('upd-icon');
+            icon.classList.add('spinning');
+            setTimeout(() => { 
+                icon.classList.remove('spinning'); 
+                alert("Action Panel: Checking for status updates..."); 
+            }, 800);
+        }
+
+        function openCalls() {
+            alert("Audio Call or Video Call?");
+        }
+
+        // --- ADD USER LOGIC ---
+        function addUser() {
+            const email = document.getElementById('search-email').value;
+            if(email.includes("@gmail.com")) {
+                document.getElementById('no-contacts').style.display = 'none';
+                const contactList = document.getElementById('contact-list');
+                
+                const card = document.createElement('div');
+                card.className = "contact-card";
+                card.innerHTML = `<div style="font-size:30px">👤</div><div style="font-size:12px; margin-top:5px;">${email}</div>`;
+                
+                contactList.appendChild(card);
+                alert("User successfully added to your contact list!");
+                document.getElementById('search-email').value = "";
+            } else {
+                alert("Please enter a valid @gmail.com address");
+            }
+        }
+    </script>
+</body>
+</html>
