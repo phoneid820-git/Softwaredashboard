@@ -3,345 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Software Hub - Official Portal</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>ChatBox - Ultra Glass English Edition</title>
     <style>
         :root {
-            --bg-color: #1a1f2e;
-            --sidebar-bg: #252b3d;
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --text-color: #ffffff;
-            --online-green: #4cd137;
-            --site-blue: #2daae1;
+            --glass: rgba(255, 255, 255, 0.1);
+            --ultra-glass: rgba(255, 255, 255, 0.05);
+            --blur: blur(25px);
+            --accent: #00f2fe;
+            --border: rgba(255, 255, 255, 0.2);
         }
 
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex; flex-direction: column; min-height: 100vh;
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            color: white; overflow: hidden;
         }
 
-        /* --- Header: Strictly Original --- */
-        header {
-            width: 100%; padding: 15px 5%;
-            background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            box-sizing: border-box;
+        /* --- AUTHENTICATION SECTION --- */
+        #auth-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            background: inherit; z-index: 1000;
         }
-        .header-controls { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-        .home-refresh-btn {
-            background: transparent; border: 1px solid rgba(45, 170, 225, 0.4);
-            color: var(--site-blue); width: 40px; height: 40px;
-            border-radius: 8px; cursor: pointer; display: flex;
-            align-items: center; justify-content: center; transition: 0.3s;
+        .auth-card {
+            background: var(--glass); backdrop-filter: var(--blur);
+            padding: 40px; border-radius: 20px; border: 1px solid var(--border);
+            width: 340px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .category-box { display: flex; gap: 10px; flex-wrap: wrap; }
-        .category-box button {
-            background: transparent; border: 1px solid rgba(45, 170, 225, 0.4);
-            color: var(--site-blue); padding: 0 15px; height: 40px;
-            border-radius: 8px; cursor: pointer; font-weight: 500;
-            display: flex; align-items: center; transition: 0.3s;
+        .auth-card input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05); color: white; outline: none; box-sizing: border-box;
         }
-        .category-box button i { margin-right: 8px; }
+        .auth-card button {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            background: var(--accent); color: #000; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .auth-card button:hover { opacity: 0.8; transform: scale(1.02); }
 
-        /* --- Layout & Spacing --- */
-        .container { flex: 1; display: flex; padding: 25px 5%; gap: 25px; box-sizing: border-box; }
-        .sidebar {
-            width: 320px; flex-shrink: 0; background-color: var(--sidebar-bg);
-            padding: 25px; border-radius: 20px; height: fit-content;
-        }
+        /* --- DASHBOARD SECTION --- */
+        #dashboard { display: none; height: 100vh; position: relative; }
 
-        .main-content { 
-            flex-grow: 1; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
+        .footer-bar {
+            position: absolute; bottom: 0; width: 100%; height: 75px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(15px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 30px; box-sizing: border-box; border-top: 1px solid var(--border);
         }
-
-        input#softwareSearch {
-            width: 100%; padding: 14px; border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: var(--bg-color); color: white; outline: none;
-            box-sizing: border-box; margin-bottom: 25px;
-        }
-
-        /* Stat Box styling with Bold text as requested */
-        .stat-box {
-            background: rgba(255, 255, 255, 0.03); padding: 15px;
-            border-radius: 12px; text-align: center; margin-bottom: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.05); color: var(--site-blue);
-            font-weight: bold; /* Making all text in stat box bold */
-        }
-        .stat-box span { display: block; font-weight: 900; font-size: 22px; color: var(--site-blue); }
-
-        .online-status { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; color: #00ff6a; margin-bottom: 5px; font-weight: bold; }
-        .status-dot { 
-            width: 12px; height: 12px; background-color: #00ff6a; border-radius: 50%; 
-            animation: blinkDot 1s infinite; 
-        }
-        @keyframes blinkDot { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-
-        /* --- Card Design --- */
-        .software-card {
-            display: flex; align-items: center; justify-content: space-between;
-            background: var(--card-bg); padding: 20px; border-radius: 18px; 
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .card-left { display: flex; align-items: center; }
-        .software-img {
-            width: 65px; height: 65px; background: rgba(45, 170, 225, 0.1);
-            border-radius: 14px; margin-right: 20px; display: flex; align-items: center; justify-content: center;
-            border: 1px solid rgba(45, 170, 225, 0.3); flex-shrink: 0;
-        }
-        .software-img i, .software-img svg { font-size: 30px; width: 30px; height: 30px; fill: var(--site-blue); color: var(--site-blue); }
-        .info h3 { margin: 0; font-size: 19px; color: var(--site-blue); }
-        .info p { margin: 5px 0 0 0; font-size: 14px; color: var(--site-blue); opacity: 0.8; }
-        .price-tag { color: var(--site-blue); font-weight: bold; font-size: 14px; margin-top: 5px; display: block; }
+        .footer-item { text-align: center; cursor: pointer; color: white; transition: 0.3s; }
+        .footer-item:hover { color: var(--accent); }
         
-        .size-info { color: var(--site-blue); font-weight: bold; font-size: 13px; margin-top: 5px; display: block; }
+        .refresh-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.6s ease; display: inline-block; }
+        .refresh-icon.spinning { transform: rotate(360deg); }
 
-        .btn-download, .btn-buy {
-            background: transparent; color: var(--site-blue); 
-            border: 1px solid rgba(45, 170, 225, 0.4); 
-            padding: 10px 22px; border-radius: 10px; cursor: pointer; 
-            font-weight: bold; text-decoration: none; display: flex; 
-            align-items: center; gap: 8px; font-size: 14px;
+        /* --- WINDOWS SYSTEM --- */
+        .full-screen-window {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ultra-glass); backdrop-filter: blur(45px);
+            display: none; z-index: 500; padding: 50px; box-sizing: border-box;
+        }
+        .window-header { 
+            font-size: 32px; font-weight: bold; margin-bottom: 20px; 
+            border-bottom: 1px solid var(--border); padding-bottom: 10px; 
+            display: flex; justify-content: space-between;
         }
 
-        /* --- Footer: Strictly Original --- */
-        .premium-footer {
-            background: rgba(0, 0, 0, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 40px 5% 20px; margin-top: 40px;
+        .settings-container { display: flex; flex-direction: column; gap: 15px; max-width: 600px; }
+        .setting-line { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03); 
+            border: 1px solid transparent; transition: 0.3s;
         }
-        .footer-content { display: flex; justify-content: space-between; max-width: 1200px; margin: 0 auto; gap: 40px; }
-        .footer-box h4, .footer-box-right h4 { color: var(--site-blue) !important; font-size: 15px; margin-bottom: 15px; text-transform: uppercase; }
-        .footer-box p, .security-list li { color: var(--site-blue) !important; font-size: 14px; }
+        .setting-line:hover { border-color: var(--border); background: rgba(255,255,255,0.07); }
         
-        .security-list { list-style: none; padding: 0; margin-top: 10px; display: flex; gap: 20px; flex-wrap: wrap; }
-        .security-list li { display: flex; align-items: center; }
-        .security-list i { color: var(--online-green); margin-right: 8px; font-size: 16px; }
-
-        .footer-contact-form input, .footer-contact-form textarea {
-            width: 100%; background: #161a26; border: 1px solid rgba(255, 255, 255, 0.1); 
-            padding: 12px; border-radius: 8px; color: white; margin-bottom: 10px; font-size: 14px; box-sizing: border-box; outline: none;
+        /* Add User Interface */
+        .add-user-box { 
+            margin-top: 30px; padding: 25px; border-radius: 15px; 
+            background: rgba(0, 242, 254, 0.05); border: 1px dashed var(--accent); 
         }
-        .btn-send-support {
-            background: transparent; color: var(--site-blue); border: 1px solid rgba(45, 170, 225, 0.4); 
-            padding: 12px 30px; border-radius: 6px; font-weight: bold; cursor: pointer; 
-            display: inline-block;
+        .add-user-box input { 
+            padding: 12px; border-radius: 8px; border: 1px solid var(--border); 
+            background: rgba(0,0,0,0.2); color: white; width: 70%; outline: none;
         }
-        .copyright-tag p { color: var(--site-blue) !important; text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 12px; }
+        .add-user-box button { 
+            padding: 12px 20px; border-radius: 8px; background: var(--accent); 
+            border: none; font-weight: bold; cursor: pointer; 
+        }
 
-        @media (max-width: 900px) {
-            .container { flex-direction: column; align-items: center; }
-            .sidebar { width: 100%; order: -1; }
-            .software-card { flex-direction: column; text-align: center; gap: 15px; width: 100%; }
-            .card-left { flex-direction: column; }
-            .software-img { margin-right: 0; margin-bottom: 10px; }
-            .info { text-align: center; }
-            .footer-content { flex-direction: column; text-align: center; align-items: center; }
-            .btn-send-support { display: block; margin: 0 auto; }
-            .security-list { justify-content: center; }
+        .close-btn { font-size: 35px; cursor: pointer; line-height: 30px; }
+        .hidden { display: none; }
+
+        #contact-list {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px; margin-top: 20px;
+        }
+        .contact-card {
+            background: var(--glass); padding: 15px; border-radius: 12px;
+            text-align: center; border: 1px solid var(--border);
         }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <div style="text-align:left;">
-            <span style="color: #2daae1; font-weight: 900; font-size: 22px;">Jahangir</span>
-        </div> 
-        <div style="text-align:left;">
-            <span style="color: #2daae1; font-weight: 900; font-size: 22px;">Software Downloading</span>
-        </div> 
-    </div>
-        
-    <div class="header-controls">
-        <button class="home-refresh-btn" onclick="location.reload()"><i class="fas fa-home"></i></button>
-        <div class="category-box">
-            <button onclick="filterByCategory('Script')"> <i class="fas fa-code"></i> Script HTML</button>
-            <button onclick="filterByCategory('Windows')"> <i class="fab fa-windows"></i> Windows ISO</button>
-            <button onclick="filterByCategory('Software')"> <i class="fas fa-box"></i> Software</button>
-            <button onclick="filterByCategory('Driver')"> <i class="fas fa-tools"></i> Driver</button>
+    <div id="auth-container">
+        <div class="auth-card" id="login-box">
+            <h2>ChatBox Login</h2>
+            <input type="email" id="l-email" placeholder="Gmail Address">
+            <input type="password" id="l-pass" placeholder="Password">
+            <button onclick="loginSuccess()">Login</button>
+            <p onclick="toggleAuth()" style="cursor:pointer; font-size:13px; margin-top:15px; color: var(--accent);">Need an account? Register</p>
+        </div>
+
+        <div class="auth-card hidden" id="register-box">
+            <h2>Create Account</h2>
+            <input type="text" id="reg-name" placeholder="Full Name">
+            <input type="email" id="reg-email" placeholder="Gmail Address">
+            <input type="password" id="reg-pass" placeholder="Create Password">
+            <button onclick="sendOTP()">Get 6-Digit Code</button>
+            <p onclick="toggleAuth()" style="cursor:pointer; font-size:13px; margin-top:15px; color: var(--accent);">Already registered? Login</p>
+        </div>
+
+        <div class="auth-card hidden" id="otp-box">
+            <h2>Verify Email</h2>
+            <p style="font-size: 13px; opacity: 0.7;">Enter the 6-digit code sent to your Gmail</p>
+            <input type="text" maxlength="6" id="otp-val" style="text-align: center; letter-spacing: 8px; font-size: 20px;">
+            <button onclick="loginSuccess()">Verify & Continue</button>
         </div>
     </div>
-</header>
 
-<div class="container">
-    <div class="sidebar">
-        <div class="search-box">
-            <h3 style="color: var(--site-blue); text-align: center;">Software Search</h3>
-            <input type="text" id="softwareSearch" placeholder="Search" oninput="filterSoftware()">
-            <div style="text-align: center; margin-bottom: 15px;">
-                <span style="color: #2daae1; font-weight: 900; font-size: 20px;">Site Analysis</span>
-            </div>
-            <div class="stat-box">
-                <div class="online-status"><span class="status-dot"></span> Online</div>
-                <div style="font-size:14px; font-weight: 900;">Server Status</div>
-            </div>
-        </div>
-        <div class="stat-box"><span id="softCountDisplay">42</span> Active Available</div>
-        <div class="stat-box"><span id="totalDlDisplay">0</span> Total Downloads</div>
-    </div>
-
-    <div class="main-content" id="softwareList">
-        <div class="software-card" data-category="Script" data-front="true">
-            <div class="card-left">
-                <div class="software-img"><i class="fas fa-code"></i></div>
-                <div class="info"><h3>HTML Script Code</h3><p>Premium Dashboard</p><span class="size-info">Size: 15 MB</span><span class="price-tag">Price: PKR 500</span></div>
-            </div>
-            <a href="https://mega.nz/file/9ipEGQwb#Naqvl3e7tlITnUI3MDfVvrxSrGZ3ZsZN1Y0AE3Leqsc" target="_blank" class="btn-buy"><i class="fas fa-shopping-cart"></i> Buy Now</a>
-        </div>
-
-        <div class="software-card" data-category="Windows" data-front="true">
-            <div class="card-left">
-                <div class="software-img"><i class="fab fa-windows"></i></div>
-                <div class="info"><h3>Windows ISO Pro</h3><p>Fast & Stable OS</p><span class="size-info">Size: 4.2 GB</span></div>
-            </div>
-            <a href="https://mega.nz/file/9ipEGQwb#Naqvl3e7tlITnUI3MDfVvrxSrGZ3ZsZN1Y0AE3Leqsc" target="_blank" class="btn-download" onclick="countDL()"><i class="fas fa-download"></i> Download</a>
-        </div>
-
-        <div class="software-card" data-category="Software" data-front="true">
-            <div class="card-left">
-                <div class="software-img"><i class="fas fa-box"></i></div>
-                <div class="info"><h3>Premium Software</h3><p>Full Original Version</p><span class="size-info">Size: 850 MB</span></div>
-            </div>
-            <a href="https://mega.nz/file/9ipEGQwb#Naqvl3e7tlITnUI3MDfVvrxSrGZ3ZsZN1Y0AE3Leqsc" target="_blank" class="btn-download" onclick="countDL()"><i class="fas fa-download"></i> Download</a>
-        </div>
-
-        <div class="software-card" data-category="Driver" data-front="true">
-            <div class="card-left">
-                <div class="software-img"><i class="fas fa-tools"></i></div>
-                <div class="info"><h3>Universal Driver</h3><p>All Devices Support</p><span class="size-info">Size: 1.1 GB</span></div>
-            </div>
-            <a href="https://mega.nz/file/9ipEGQwb#Naqvl3e7tlITnUI3MDfVvrxSrGZ3ZsZN1Y0AE3Leqsc" target="_blank" class="btn-download" onclick="countDL()"><i class="fas fa-download"></i> Download</a>
-        </div>
-
-        <div id="extraCards" style="display: contents;"></div>
-    </div>
-</div>
-
-<footer class="premium-footer">
-    <div class="footer-content">
-        <div class="footer-box">
-            <h4><i class="fas fa-globe"></i> PORTAL STATUS</h4>
-            <p>Official Pakistan Software Hub (2025). High-Speed Servers Providing 100% Original And Verified Digital Tools.</p>
-            <ul class="security-list">
-                <li><i class="fas fa-check-circle"></i> 100% Original</li>
-                <li><i class="fas fa-check-circle"></i> No Copyright</li>
-                <li><i class="fas fa-check-circle"></i> SSL Verified</li>
-            </ul>
-        </div>
-        <div class="footer-box-right">
-            <h4>CONTACT SUPPORT</h4>
-            <form class="footer-contact-form">
-                <input type="email" placeholder="Gmail ID">
-                <textarea placeholder="Type Message" rows="2"></textarea>
-                <div style="text-align: left;"><button type="button" class="btn-send-support">Send to Support</button></div>
-            </form>
-        </div>
-    </div>
-    <div class="copyright-tag"><p>© 2025 Pakistan Software Hub Website New</p></div>
-</footer>
-
-<script>
-    const extraContainer = document.getElementById('extraCards');
-    
-    function generate(cat, count) {
-        for(let i=1; i<count; i++) {
-            let div = document.createElement('div');
-            div.className = 'software-card'; div.style.display = 'none'; 
-            div.setAttribute('data-category', cat);
+    <div id="dashboard">
+        <div style="padding: 40px;">
+            <h1 id="welcome-text">Welcome!</h1>
+            <p style="opacity: 0.8;">Your secure dashboard is active.</p>
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 30px 0;">
             
-            let iconClass = "fas fa-box";
-            if(cat === 'Script') iconClass = "fas fa-code";
-            else if(cat === 'Windows') iconClass = "fab fa-windows"; // Windows logo for hidden cards
-            else if(cat === 'Driver') iconClass = "fas fa-tools";
-            
-            let size = cat === 'Script' ? '10 MB' : (cat === 'Windows' ? '3.5 GB' : (cat === 'Software' ? '400 MB' : '900 MB'));
-            
-            div.innerHTML = `
-                <div class="card-left">
-                    <div class="software-img"><i class="${iconClass}"></i></div>
-                    <div class="info">
-                        <h3>${cat} Pack ${i+1}</h3>
-                        <p>Verified Content Pack</p>
-                        <span class="size-info">Size: ${size}</span>
-                        ${cat === 'Script' ? '<span class="price-tag">Price: PKR 500</span>' : ''}
-                    </div>
+            <h3>My Contacts</h3>
+            <div id="contact-list">
+                <p id="no-contacts" style="opacity: 0.4; grid-column: 1/-1;">No contacts added yet. Go to Settings to add users.</p>
+            </div>
+        </div>
+
+        <div class="footer-bar">
+            <div class="footer-item" onclick="openUpdates()">
+                <div class="refresh-icon" id="upd-icon">🔄</div>
+                <div style="font-size: 11px;">Update</div>
+            </div>
+
+            <div style="display: flex; gap: 40px;">
+                <div class="footer-item" onclick="openCalls()">
+                    <div style="font-size: 24px;">📞</div>
+                    <div style="font-size: 11px;">Calls</div>
                 </div>
-                <a href="https://mega.nz/file/9ipEGQwb#Naqvl3e7tlITnUI3MDfVvrxSrGZ3ZsZN1Y0AE3Leqsc" target="_blank" class="${cat === 'Script' ? 'btn-buy' : 'btn-download'}" onclick="countDL()"><i class="fas ${cat === 'Script' ? 'fa-shopping-cart' : 'fa-download'}"></i> ${cat === 'Script' ? 'Buy Now' : 'Download'}</a>`;
-            extraContainer.appendChild(div);
+                <div class="footer-item" onclick="openSettings()">
+                    <div style="font-size: 24px; color: var(--accent);">⚙️</div>
+                    <div style="font-size: 11px;">Settings</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-window" class="full-screen-window">
+        <div class="window-header">
+            <span>Settings</span>
+            <span class="close-btn" onclick="closeWindow('settings-window')">&times;</span>
+        </div>
+        
+        <div class="settings-container">
+            <div class="setting-line"><span>Desktop Notifications</span> <input type="checkbox" checked></div>
+            <div class="setting-line"><span>Private Profile</span> <input type="checkbox"></div>
+            <div class="setting-line"><span>Show Online Status</span> <input type="checkbox" checked></div>
+
+            <div class="add-user-box">
+                <h4>Add New Contact</h4>
+                <p style="font-size: 12px; margin-bottom: 15px; opacity: 0.8;">Search for a user by their registered Gmail ID to start chatting.</p>
+                <div style="display: flex; gap: 10px;">
+                    <input type="email" id="search-email" placeholder="user@gmail.com">
+                    <button onclick="addUser()">Add User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUTHENTICATION LOGIC ---
+        function toggleAuth() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('register-box').classList.toggle('hidden');
         }
-    }
 
-    generate('Script', 5); 
-    generate('Windows', 4); 
-    generate('Software', 15); 
-    generate('Driver', 15);
+        function sendOTP() {
+            const email = document.getElementById('reg-email').value;
+            if(!email.includes("@")) return alert("Please enter a valid Gmail address");
+            document.getElementById('register-box').classList.add('hidden');
+            document.getElementById('otp-box').classList.remove('hidden');
+        }
 
-    function filterSoftware() {
-        let val = document.getElementById('softwareSearch').value.toLowerCase();
-        let allCards = document.querySelectorAll('.software-card');
-        allCards.forEach(card => {
-            let name = card.querySelector('h3').innerText.toLowerCase();
-            let cat = card.getAttribute('data-category').toLowerCase();
-            if(val === "") {
-                card.style.display = card.getAttribute('data-front') === "true" ? 'flex' : 'none';
+        function loginSuccess() {
+            const userName = document.getElementById('reg-name').value || "User";
+            document.getElementById('welcome-text').innerText = "Welcome, " + userName + "!";
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        // --- DASHBOARD ACTIONS ---
+        function openSettings() { document.getElementById('settings-window').style.display = 'block'; }
+        function closeWindow(id) { document.getElementById(id).style.display = 'none'; }
+
+        function openUpdates() {
+            const icon = document.getElementById('upd-icon');
+            icon.classList.add('spinning');
+            setTimeout(() => { 
+                icon.classList.remove('spinning'); 
+                alert("Action Panel: Checking for status updates..."); 
+            }, 800);
+        }
+
+        function openCalls() {
+            alert("Audio Call or Video Call?");
+        }
+
+        // --- ADD USER LOGIC ---
+        function addUser() {
+            const email = document.getElementById('search-email').value;
+            if(email.includes("@gmail.com")) {
+                document.getElementById('no-contacts').style.display = 'none';
+                const contactList = document.getElementById('contact-list');
+                
+                const card = document.createElement('div');
+                card.className = "contact-card";
+                card.innerHTML = `<div style="font-size:30px">👤</div><div style="font-size:12px; margin-top:5px;">${email}</div>`;
+                
+                contactList.appendChild(card);
+                alert("User successfully added to your contact list!");
+                document.getElementById('search-email').value = "";
             } else {
-                if(name.includes(val) || cat.includes(val)) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            }
-        });
-    }
-
-    function filterByCategory(c) {
-        document.getElementById('softwareSearch').value = c;
-        filterSoftware();
-    }
-
-    function syncStats() {
-        const initialCount = 2840; 
-        const increment = 20;
-        const now = new Date().getTime();
-        const oneDay = 24 * 60 * 60 * 1000;
-
-        let currentDl = parseInt(localStorage.getItem('dl_total'));
-        let lastUpdate = localStorage.getItem('dl_last_time');
-
-        if (!currentDl) {
-            currentDl = initialCount;
-            lastUpdate = now;
-            localStorage.setItem('dl_total', currentDl);
-            localStorage.setItem('dl_last_time', lastUpdate);
-        } else {
-            let timePassed = now - lastUpdate;
-            if (timePassed >= oneDay) {
-                let days = Math.floor(timePassed / oneDay);
-                currentDl += (days * increment);
-                localStorage.setItem('dl_total', currentDl);
-                localStorage.setItem('dl_last_time', now);
+                alert("Please enter a valid @gmail.com address");
             }
         }
-        document.getElementById('totalDlDisplay').innerText = currentDl.toLocaleString();
-    }
-
-    function countDL() {
-        let count = parseInt(localStorage.getItem('dl_total') || 0);
-        count++;
-        localStorage.setItem('dl_total', count);
-        document.getElementById('totalDlDisplay').innerText = count.toLocaleString();
-    }
-
-    window.onload = () => {
-        filterSoftware();
-        syncStats();
-    };
-</script>
+    </script>
 </body>
 </html>
