@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ChatBox - Secure Edition</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.1);
+            --ultra-glass: rgba(255, 255, 255, 0.05);
+            --blur: blur(25px);
+            --accent: #00f2fe;
+            --border: rgba(255, 255, 255, 0.2);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            color: white; overflow: hidden;
+        }
+
+        /* --- AUTHENTICATION SECTION --- */
+        #auth-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            background: #0f0c29; z-index: 2000;
+        }
+        .auth-card {
+            background: var(--glass); backdrop-filter: var(--blur);
+            padding: 30px; border-radius: 20px; border: 1px solid var(--border);
+            width: 85%; max-width: 340px; text-align: center;
+        }
+        .auth-card input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05); color: white; outline: none; box-sizing: border-box;
+        }
+        .auth-card button {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            background: var(--accent); color: #000; font-weight: bold; cursor: pointer;
+        }
+        .hidden { display: none !important; }
+
+        /* --- DASHBOARD & FOOTER --- */
+        #dashboard { 
+            display: none; height: 100vh; position: relative; 
+            padding-bottom: 110px; box-sizing: border-box; overflow-y: auto;
+        }
+
+        .footer-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 85px;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 30px 10px 30px; box-sizing: border-box; border-top: 1px solid var(--border);
+            z-index: 999;
+        }
+
+        .footer-item { text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
+        .refresh-icon { font-size: 24px; margin-bottom: 2px; transition: transform 0.6s; }
+        .refresh-icon.spinning { transform: rotate(360deg); }
+
+        /* Windows & Popups */
+        .full-screen-window {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--ultra-glass); backdrop-filter: blur(45px);
+            display: none; z-index: 1100; padding: 40px; box-sizing: border-box;
+        }
+        .call-popup {
+            position: absolute; bottom: 100px; right: 20px;
+            background: rgba(0,0,0,0.9); padding: 15px; border-radius: 15px;
+            display: none; flex-direction: column; gap: 10px; border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-container">
+        <div class="auth-card" id="login-box">
+            <h2>ChatBox Login</h2>
+            <input type="email" id="l-email" placeholder="Gmail Address">
+            <input type="password" id="l-pass" placeholder="Password">
+            <button onclick="handleLogin()">Login</button>
+            <p onclick="showRegister()" style="cursor:pointer; font-size:12px; margin-top:15px; color: var(--accent);">Create an account</p>
+        </div>
+
+        <div class="auth-card hidden" id="register-box">
+            <h2>Register</h2>
+            <input type="text" id="reg-name" placeholder="Full Name">
+            <input type="email" id="reg-email" placeholder="Gmail Address">
+            <input type="password" id="reg-pass" placeholder="Create Password">
+            <button id="send-btn" onclick="sendOTP()">Get 6-Digit Code</button>
+            <p onclick="showLogin()" style="cursor:pointer; font-size:12px; margin-top:15px;">Back to Login</p>
+        </div>
+
+        <div class="auth-card hidden" id="otp-box">
+            <h2>Verify Gmail</h2>
+            <p style="font-size: 11px; opacity: 0.7;">Enter the 6-digit code sent to your email.</p>
+            <input type="text" id="otp-input" placeholder="000000" maxlength="6" style="text-align:center; font-size:22px; letter-spacing:5px;">
+            <button onclick="verifyOTP()">Verify & Register</button>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <div style="padding: 30px;">
+            <h1 id="welcome-user">Welcome!</h1>
+            <p>Your secure dashboard is ready.</p>
+        </div>
+
+        <div id="call-menu" class="call-popup">
+            <button onclick="startCall('Audio')" style="background:none; color:white; border:none; cursor:pointer;">📞 Audio Call</button>
+            <hr style="width:100%; border:0.5px solid var(--border);">
+            <button onclick="startCall('Video')" style="background:none; color:white; border:none; cursor:pointer;">📹 Video Call</button>
+        </div>
+
+        <div class="footer-bar">
+            <div class="footer-item" onclick="handleUpdateAction()">
+                <div class="refresh-icon" id="upd-icon">🔃</div>
+                <div style="font-size: 10px;">Update</div>
+            </div>
+            <div style="display: flex; gap: 30px;">
+                <div class="footer-item" onclick="toggleCallMenu()">
+                    <div style="font-size:22px;">📞</div>
+                    <div style="font-size:10px;">Calls</div>
+                </div>
+                <div class="footer-item" onclick="openSettings()">
+                    <div style="font-size:22px;">⚙️</div>
+                    <div style="font-size:10px;">Settings</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-window" class="full-screen-window">
+        <h2 style="margin-top:0;">Settings</h2>
+        <div style="margin-top:20px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <span>Show Desktop Notifications</span>
+                <input type="checkbox" checked>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <span>Dark Mode (Glass)</span>
+                <input type="checkbox" checked>
+            </div>
+        </div>
+        <button onclick="closeSettings()" style="margin-top:20px; background:var(--accent); border:none; padding:10px 20px; border-radius:5px;">Close</button>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. यहाँ अपनी EmailJS PUBLIC_KEY डालें
+        // ==========================================
+        emailjs.init("यहाँ_अपनी_PUBLIC_KEY_डालें"); 
+
+        let generatedOTP = null;
+        let userData = {};
+
+        function showRegister() {
+            document.getElementById('login-box').classList.add('hidden');
+            document.getElementById('register-box').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('register-box').classList.add('hidden');
+            document.getElementById('login-box').classList.remove('hidden');
+        }
+
+        function sendOTP() {
+            const email = document.getElementById('reg-email').value;
+            const name = document.getElementById('reg-name').value;
+            const pass = document.getElementById('reg-pass').value;
+
+            if(!email.includes("@") || name.length < 2) {
+                alert("Please enter valid details");
+                return;
+            }
+
+            generatedOTP = Math.floor(100000 + Math.random() * 900000);
+            userData = { name, email, pass };
+            document.getElementById('send-btn').innerText = "Sending...";
+
+            // ==========================================
+            // 2. यहाँ अपनी SERVICE_ID और TEMPLATE_ID डालें
+            // ==========================================
+            emailjs.send("यहाँ_SERVICE_ID_डालें", "यहाँ_TEMPLATE_ID_डालें", {
+                to_email: email,
+                to_name: name,
+                otp_code: generatedOTP
+            }).then(() => {
+                alert("OTP sent to " + email);
+                document.getElementById('register-box').classList.add('hidden');
+                document.getElementById('otp-box').classList.remove('hidden');
+            }).catch((err) => {
+                alert("Error: Check your EmailJS keys in the code!");
+                document.getElementById('send-btn').innerText = "Get 6-Digit Code";
+            });
+        }
+
+        function verifyOTP() {
+            if(document.getElementById('otp-input').value == generatedOTP) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                sessionStorage.setItem('userName', userData.name);
+                enterDashboard();
+            } else {
+                alert("Wrong OTP!");
+            }
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('l-email').value;
+            if(email.includes("@")) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+                enterDashboard();
+            }
+        }
+
+        function enterDashboard() {
+            document.getElementById('welcome-user').innerText = "Hello, " + (sessionStorage.getItem('userName') || "User");
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        function handleUpdateAction() {
+            const icon = document.getElementById('upd-icon');
+            icon.classList.add('spinning');
+            setTimeout(() => {
+                icon.classList.remove('spinning');
+                alert("Updates Checked!");
+            }, 1000);
+        }
+
+        function toggleCallMenu() {
+            const menu = document.getElementById('call-menu');
+            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function startCall(type) {
+            alert("Starting " + type + " Call...");
+            document.getElementById('call-menu').style.display = 'none';
+        }
+
+        function openSettings() { document.getElementById('settings-window').style.display = 'block'; }
+        function closeSettings() { document.getElementById('settings-window').style.display = 'none'; }
+
+        window.onload = function() {
+            if(sessionStorage.getItem('isLoggedIn') === 'true') enterDashboard();
+        }
+    </script>
+</body>
+</html>
