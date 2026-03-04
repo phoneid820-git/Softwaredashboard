@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Find Number - Ultra Pro</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            background: radial-gradient(circle at top right, #2c3e50, #1a252f);
+            display: flex;
+            justify-content: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        /* डेस्कटॉप के लिए सेटिंग */
+        @media screen and (min-width: 601px) {
+            body {
+                align-items: center; 
+            }
+            .glass-container {
+                width: 460px; 
+                padding: 45px 35px;
+                border-radius: 40px;
+            }
+            .title-text { font-size: 32px; }
+            #resultDisplay { font-size: 22px; height: 65px; }
+        }
+
+        /* मोबाइल के लिए सेटिंग */
+        @media screen and (max-width: 600px) {
+            body {
+                align-items: flex-start;
+                padding-top: 35px; 
+            }
+            .glass-container {
+                width: 92%;
+                padding: 30px 20px;
+                border-radius: 30px;
+            }
+            .title-text { font-size: 26px; }
+            #resultDisplay { font-size: 18px; height: 50px; }
+        }
+
+        .glass-container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title-text {
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #3498db;
+        }
+
+        #resultDisplay {
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #3498db;
+        }
+
+        .custom-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(52, 152, 219, 0.4); 
+            border-radius: 18px; 
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .icon-style { 
+            color: #3498db; 
+            margin-right: 15px; 
+            width: 22px;
+            height: 22px;
+        }
+
+        /* यहाँ कलर अपडेट किया गया है: Select File और Enter Number का कलर अब बिल्कुल सेम है */
+        .custom-input input, 
+        .custom-input span#fileName {
+            background: transparent;
+            border: none;
+            /* यह कलर (rgba 255, 255, 255, 0.6) वही है जो इनपुट बॉक्स का है */
+            color: rgba(255, 255, 255, 0.6) !important; 
+            font-size: 16px;
+            width: 100%;
+            outline: none;
+            display: block;
+        }
+
+        /* प्लेसहोल्डर कलर भी मैच किया गया है */
+        .custom-input input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #fileInput {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .verify-btn {
+            background: rgba(52, 152, 219, 0.15);
+            color: #3498db;
+            border: 1px solid rgba(52, 152, 219, 0.5);
+            padding: 12px 30px;
+            width: auto; 
+            min-width: 160px;   
+            border-radius: 18px; 
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .verify-btn:hover {
+            background: rgba(52, 152, 219, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .verify-btn:active { transform: scale(0.95); }
+
+        .success { color: #2ecc71; font-weight: 600; font-size: 22px; }
+        .failure { color: #e74c3c; font-weight: 500; }
+
+    </style>
+</head>
+<body>
+
+    <div class="glass-container">
+        <div class="title-text">Find Number</div>
+        <div id="resultDisplay">Scan</div>
+
+        <div class="custom-input">
+            <i data-lucide="file-text" class="icon-style"></i>
+            <span id="fileName">Select txt file</span>
+            <input type="file" id="fileInput" accept=".txt">
+        </div>
+
+        <div class="custom-input">
+            <i data-lucide="user" class="icon-style"></i>
+            <input type="text" id="phoneNumber" 
+                   placeholder="Enter number" 
+                   inputmode="numeric" 
+                   maxlength="10"
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+        </div>
+
+        <div class="btn-container">
+            <button class="verify-btn" onclick="startVerification()">Verify Now</button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        let dataBank = [];
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').innerText = file.name;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    dataBank = event.target.result.split(/\r?\n/).map(t => t.trim()).filter(t => t !== "");
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function startVerification() {
+            const display = document.getElementById('resultDisplay');
+            const inputVal = document.getElementById('phoneNumber').value.trim();
+
+            if (!inputVal || dataBank.length === 0) {
+                display.style.color = "#e74c3c";
+                display.innerHTML = "Select file and number";
+                return;
+            }
+
+            display.style.color = "#3498db";
+            display.innerText = "Checking...";
+
+            setTimeout(() => {
+                if (dataBank.includes(inputVal)) {
+                    display.innerHTML = `<span class="success">Verified: ${inputVal}</span>`;
+                } else {
+                    display.style.color = "#e74c3c";
+                    display.innerHTML = "No Matching Number";
+                }
+            }, 800);
+        }
+    </script>
+</body>
+</html>
