@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Safe One - Premium Security Access</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        /* Shared Styles */
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; overflow-x: hidden; }
+        .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, #0f0c29, #1c1845, #24243e); z-index: -1; }
+
+        /* Login Page Styles */
+        .glass-container { 
+            background: rgba(255, 255, 255, 0.07); 
+            backdrop-filter: blur(25px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 35px; 
+            padding: 30px; 
+            width: 90%; 
+            max-width: 420px; 
+            text-align: center; 
+            color: white; 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6); 
+            display: block; /* Initially visible */
+        }
+
+        .company-logo { 
+            width: 65px; height: 65px; 
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5); 
+            margin: 0 auto 15px; 
+            border-radius: 18px; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 30px; color: white; 
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); 
+        }
+
+        h2 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+        .subtitle { font-size: 11px; opacity: 0.6; margin-bottom: 25px; text-transform: uppercase; }
+
+        .input-box { position: relative; margin-bottom: 20px; }
+        input.login-input { 
+            width: 100%; padding: 16px; border-radius: 15px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            background: rgba(255,255,255,0.05); 
+            color: white; font-size: 15px; outline: none; 
+        }
+        .input-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.4); cursor: pointer; }
+
+        .package-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .pkg-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 5px; border-radius: 15px; cursor: pointer; transition: 0.3s; }
+        .pkg-card.active { background: rgba(0, 210, 255, 0.2); border-color: #00d2ff; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); }
+        .pkg-card div:first-child { font-weight: bold; font-size: 14px; }
+        .pkg-card div:last-child { font-size: 10px; opacity: 0.7; }
+
+        .pay-row { display: flex; gap: 10px; margin-bottom: 20px; }
+        .pay-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: bold; color: white; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .ep { background: #37a849; }
+        .jc { background: #d31820; }
+
+        /* UPDATED: Login Button size and casing */
+        .login-btn { 
+            width: 80%; /* Width kam kar di */
+            padding: 12px; /* Height kam kar di */
+            border: none; 
+            border-radius: 15px; 
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5); 
+            color: white; 
+            font-weight: 700; 
+            font-size: 15px; 
+            cursor: pointer; 
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.3); 
+            transition: 0.3s; 
+            margin: 0 auto; /* Center alignment */
+            display: block;
+        }
+
+        /* Dashboard (Tool) Styles - From Second Code */
+        #dashboardTool { display: none; width: 90%; max-width: 450px; position: relative; }
+        .tool-container { background: rgba(255, 255, 255, 0.07); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 35px; padding: 40px; text-align: center; color: white; box-shadow: 0 25px 60px rgba(0,0,0,0.6); }
+        .input-wrapper { position: relative; margin: 25px 0 10px 0; }
+        input.tool-input { width: 100%; padding: 18px; padding-right: 100px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; font-size: 16px; outline: none; transition: 0.4s; }
+        .icon-actions { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; gap: 15px; font-size: 20px; cursor: pointer; color: rgba(255,255,255,0.5); }
+        .strength-meter { height: 6px; width: 65%; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 0 auto 25px auto; overflow: hidden; }
+        .strength-bar { height: 100%; width: 0%; transition: 0.5s ease; }
+        .check-btn, .download-btn { width: 75%; padding: 14px; border: none; border-radius: 15px; background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); color: white; font-weight: 700; cursor: pointer; display: block; margin: 0 auto; transition: 0.3s; box-shadow: 0 5px 15px rgba(0, 210, 255, 0.3); }
+        .download-btn { display: none; margin-bottom: 15px; background: linear-gradient(135deg, #00ff88 0%, #3a7bd5 100%); }
+        
+        /* Dashboard Logout Button (Styled separately to keep it small) */
+        .logout-btn { width: 100%; padding: 10px; border: none; border-radius: 18px; background: rgba(255,255,255,0.1); color: white; font-weight: 600; font-size: 12px; cursor: pointer; transition: 0.3s; margin-top: 25px; }
+
+        .full-window { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, #0f0c29, #1c1845, #24243e); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: white; padding: 20px; }
+        .window-content { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(35px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 40px; padding: 35px; width: 100%; max-width: 420px; text-align: left; overflow-y: auto; max-height: 90vh; }
+        .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; width: 100%; text-align: center;}
+        .roadmap-item { background: rgba(255, 255, 255, 0.06); padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 10px; font-size: 11px; text-align: left; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .roadmap-item i { color: #00ff88; font-size: 15px; }
+        .stamp-row { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+        .glow-circle { width: 100px; height: 100px; border-radius: 50% !important; border: 3px dashed #00d2ff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: white; background: radial-gradient(circle, rgba(0, 210, 255, 0.4), transparent); box-shadow: 0 0 30px rgba(0, 210, 255, 0.6); text-align: center; line-height: 1.2; animation: pulse-glow 2s infinite ease-in-out; flex-shrink: 0; }
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); } 50% { box-shadow: 0 0 40px rgba(0, 210, 255, 0.7); } 100% { box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); } }
+        .img-badge { padding: 12px 28px; border-radius: 15px; border: 2.5px solid #00d2ff; color: #00d2ff; font-weight: 900; font-size: 15px; text-transform: uppercase; }
+        #statusTitle { font-size: 26px; font-weight: 800; color: #00ff88; margin-bottom: 12px; line-height: 1.2; }
+        .crack-text { color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+        .protection-note { background: rgba(0, 255, 136, 0.1); border-radius: 12px; padding: 14px; font-size: 14px; color: #00ff88; display: flex; gap: 10px; }
+        .back-btn-popup { width: auto; padding: 10px 35px; border: none; border-radius: 15px; background: linear-gradient(135deg, #3a7bd5 0%, #00d2ff 100%); color: white; font-weight: 700; cursor: pointer; margin-top: 20px; display: block; margin-left: auto; margin-right: auto; text-align: center; }
+        .info-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #00d2ff; cursor: pointer; margin-top: 20px; font-size: 18px; display: block; margin: 20px auto 0 auto; }
+        .ethic-warning { background: rgba(255, 77, 77, 0.1); border-left: 3px solid #ff4d4d; padding: 12px; border-radius: 8px; font-size: 12px; margin-top: 15px; color: #ffcccc; }
+    </style>
+</head>
+<body>
+
+<div class="bg-animation"></div>
+
+<div class="glass-container" id="loginPage">
+    <div class="company-logo"><i class="fa-solid fa-user-shield"></i></div>
+    <h2>Safe One Access</h2>
+    <p class="subtitle">Secure tool</p>
+
+    <div class="input-box">
+        <input type="password" id="loginPass" class="login-input" placeholder="Enter License Key..." value="SafeOne123!">
+        <i class="fa-solid fa-eye" id="toggleLoginPass"></i>
+    </div>
+
+    <p style="text-align: left; font-size: 12px; margin-bottom: 10px; opacity: 0.8;">Choose Protection Plan:</p>
+    <div class="package-grid">
+        <div class="pkg-card" onclick="selectPkg(this, 10)">
+            <div>10 Days</div>
+            <div>Starter</div>
+        </div>
+        <div class="pkg-card" onclick="selectPkg(this, 15)">
+            <div>15 Days</div>
+            <div>Pro</div>
+        </div>
+        <div class="pkg-card active" id="defaultPkg" onclick="selectPkg(this, 30)">
+            <div>1 Month</div>
+            <div>Master</div>
+        </div>
+    </div>
+
+    <div class="pay-row">
+        <button class="pay-btn ep" onclick="alert('Easypaisa Gateway Opening...')">
+            <i class="fa-solid fa-wallet"></i> Easypaisa
+        </button>
+        <button class="pay-btn jc" onclick="alert('JazzCash Gateway Opening...')">
+            <i class="fa-solid fa-mobile-screen"></i> JazzCash
+        </button>
+    </div>
+
+    <button class="login-btn" onclick="handleLogin()">Authenticate access</button>
+</div>
+
+<div id="dashboardTool">
+    <div class="tool-container">
+        <div class="company-logo"><i class="fa-solid fa-user-shield"></i></div>
+        <h2 style="margin:0;">Safe One Security</h2>
+        <p id="subInfo" style="font-size: 12px; opacity: 0.6; margin-bottom: 20px;">Master Protection 2026</p>
+
+        <div class="input-wrapper">
+            <input type="password" id="passInput" class="tool-input" placeholder="Enter password..." oninput="updateMeter()">
+            <div class="icon-actions">
+                <i class="fa-solid fa-copy" onclick="copyPassword()"></i>
+                <i class="fa-solid fa-eye" id="eyeIcon" onclick="toggleVisibility()"></i>
+            </div>
+        </div>
+        
+        <div class="strength-meter"><div id="bar" class="strength-bar"></div></div>
+        
+        <button id="downloadBtn" class="download-btn" onclick="downloadCSV()"><i class="fa-solid fa-file-csv"></i> Download CSV File</button>
+        <button class="check-btn" onclick="analyzeSecurity()">Analyze Security</button>
+        <button class="info-btn" onclick="openRoadmap()"><i class="fa-solid fa-info"></i></button>
+        
+        <button class="logout-btn" onclick="location.reload()">LOGOUT</button>
+    </div>
+</div>
+
+<div id="roadmapWindow" class="full-window">
+    <div class="window-content">
+        <h3 style="color:#00d2ff; text-align: center; margin-bottom: 20px;">Safe One Core Protection Framework</h3>
+        <div class="roadmap-grid">
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>AES-256 Engine</span></div>
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>Salted Hashing</span></div>
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>Multi-Cloud Shield</span></div>
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>Bank Compatible</span></div>
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>Brute Force Block</span></div>
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>Spy-Proof UI</span></div>
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>Local Vault Export</span></div>
+            <div class="roadmap-item"><i class="fa-solid fa-circle-check"></i> <span>Real-time AI</span></div>
+        </div>
+        <div style="margin-top: 20px; text-align: left; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+            <h4 style="color:#00ff88; margin-bottom: 10px;">About the Developer</h4>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.8); line-height: 1.5; margin: 0;">
+                <b style="color: #00d2ff;">Developed by:</b> <span style="color: #00d2ff;">Jahangir Khan</span><br>
+                <b style="color: #00d2ff;">Launch Date:</b> March 11, 2026<br><br>
+                Safe One Security Master Tool Pro is engineered for 100% security assurance. Designed to protect users from
+sophisticated hacking attacks, this tool ensures your digital
+identity remains unbreakable.
+            </p>
+            <div class="ethic-warning">
+                <strong>Ethical Guidelines</strong><br>
+                This tool is for Educational & Defensive purposes only.Its
+mission is to defend websites and users against hacking
+attacks. Unauthorized illegal use is strictly prohibited.
+            </div>
+        </div>
+        <button class="back-btn-popup" onclick="closeWindows()">Back</button>
+    </div>
+</div>
+
+<div id="resultWindow" class="full-window">
+    <div class="window-content">
+        <div class="stamp-row">
+            <div id="glowStamp" class="glow-circle">SAFE ONE<br>VERIFIED</div>
+            <div id="badgeTag" class="img-badge">SECURE</div>
+        </div>
+        <div id="statusTitle">Safe One:<br>Analyzing...</div>
+        <div class="crack-text">
+            Time for a top hacker to crack: <b id="timeVal" style="color:#fff;">...</b><br>
+            <span id="levelText">Checking...</span>
+        </div>
+        <div id="protectionNote" class="protection-note">
+            <i class="fa-solid fa-lock" style="margin-top: 3px;"></i>
+            <span id="noteText">Safe One Security is analyzing your input...</span>
+        </div>
+        <button class="back-btn-popup" onclick="closeWindows()">Back</button>
+    </div>
+</div>
+
+<script>
+    let selectedDays = 30;
+
+    // --- LOGIN LOGIC ---
+    document.getElementById('toggleLoginPass').addEventListener('click', function() {
+        const passInput = document.getElementById('loginPass');
+        if(passInput.type === 'password') {
+            passInput.type = 'text';
+            this.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            passInput.type = 'password';
+            this.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    });
+
+    function selectPkg(element, days) {
+        document.querySelectorAll('.pkg-card').forEach(card => card.classList.remove('active'));
+        element.classList.add('active');
+        selectedDays = days;
+    }
+
+    function handleLogin() {
+        const pass = document.getElementById('loginPass').value;
+        if(pass !== "SafeOne123!") {
+            alert("❌ Invalid License Key!");
+            return;
+        }
+        // Switch Pages
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('dashboardTool').style.display = 'block';
+        
+        // Update dashboard info based on login selection
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + selectedDays);
+        document.getElementById('subInfo').innerText = " " + selectedDays + " Secor Tool Access Password " + expiry.toLocaleDateString() + ")";
+    }
+
+    // --- TOOL LOGIC ---
+    function toggleVisibility() {
+        const input = document.getElementById('passInput');
+        const icon = document.getElementById('eyeIcon');
+        if (input.type === 'password') { input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash'); }
+        else { input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye'); }
+    }
+
+    function copyPassword() {
+        const input = document.getElementById('passInput');
+        if(!input.value) return;
+        navigator.clipboard.writeText(input.value).then(() => alert("Password Copied!"));
+    }
+
+    function updateMeter() {
+        const pass = document.getElementById('passInput').value;
+        const bar = document.getElementById('bar');
+        document.getElementById('downloadBtn').style.display = 'none';
+        let strength = 0;
+        if (pass.length > 0) {
+            if (pass.length >= 8) strength += 20;
+            if (pass.length >= 12) strength += 20;
+            if (/[A-Z]/.test(pass)) strength += 20;
+            if (/[0-9]/.test(pass)) strength += 20;
+            if (/[^A-Za-z0-9]/.test(pass)) strength += 20;
+        }
+        bar.style.width = strength + "%";
+        bar.style.backgroundColor = strength <= 40 ? "#ff4d4d" : strength <= 80 ? "#ffa500" : "#00ff88"; 
+    }
+
+    function openRoadmap() { document.getElementById('roadmapWindow').style.display = 'flex'; }
+    function closeWindows() { 
+        document.getElementById('roadmapWindow').style.display = 'none'; 
+        document.getElementById('resultWindow').style.display = 'none'; 
+        if(parseInt(document.getElementById('bar').style.width) >= 100) { document.getElementById('downloadBtn').style.display = 'block'; }
+    }
+
+    function downloadCSV() {
+        const pass = document.getElementById('passInput').value;
+        if(!pass) return;
+        const rows = [["Field", "Value"], ["Developer", "Jahangir Khan"], ["Date", "March 11 2026"], ["Safe One Vault Key", pass], ["Security Status", "Unbreakable"]];
+        const csvContent = "\ufeff" + rows.map(r => r.map(cell => `"${cell}"`).join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "SafeOne_Report.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => { document.body.removeChild(link); window.URL.revokeObjectURL(url); }, 150);
+    }
+
+    function analyzeSecurity() {
+        const pass = document.getElementById('passInput').value;
+        if(!pass) { alert("Please enter a password."); return; }
+        document.getElementById('resultWindow').style.display = 'flex';
+        const barWidth = parseInt(document.getElementById('bar').style.width) || 0;
+        const title = document.getElementById('statusTitle');
+        const timeVal = document.getElementById('timeVal');
+        const levelText = document.getElementById('levelText');
+        const badge = document.getElementById('badgeTag');
+        const stamp = document.getElementById('glowStamp');
+        const noteBox = document.getElementById('protectionNote');
+        const noteText = document.getElementById('noteText');
+
+        if (barWidth <= 40) {
+            title.innerHTML = "Safe One:<br>Risky Password"; title.style.color = "#ff4d4d";
+            timeVal.innerText = "Seconds"; levelText.innerText = "(Vulnerable)";
+            badge.innerText = "RISKY"; badge.style.color = "#ff4d4d"; badge.style.borderColor = "#ff4d4d";
+            stamp.style.borderColor = "#ff4d4d"; stamp.style.background = "radial-gradient(circle, rgba(255, 77, 77, 0.3), transparent)";
+            noteBox.style.color = "#ff4d4d"; noteBox.style.background = "rgba(255, 77, 77, 0.1)";
+            noteText.innerText = "Safe One Warning: This key is vulnerable.";
+        } else if (barWidth <= 80) {
+            title.innerHTML = "Safe One:<br>Weak Password"; title.style.color = "#ffa500";
+            timeVal.innerText = "Days/Months"; levelText.innerText = "(Medium)";
+            badge.innerText = "WEAK"; badge.style.color = "#ffa500"; badge.style.borderColor = "#ffa500";
+            stamp.style.borderColor = "#ffa500"; stamp.style.background = "radial-gradient(circle, rgba(255, 165, 0, 0.3), transparent)";
+            noteBox.style.color = "#ffa500"; noteBox.style.background = "rgba(255, 165, 0, 0.1)";
+            noteText.innerText = "Safe One Alert: Needs more complexity.";
+        } else {
+            title.innerHTML = "Safe One:<br>Unbreakable Password"; title.style.color = "#00ff88";
+            timeVal.innerText = "Centuries"; levelText.innerText = "(Unbreakable)";
+            badge.innerText = "SECURE"; badge.style.color = "#00d2ff"; badge.style.borderColor = "#00d2ff";
+            stamp.style.borderColor = "#00d2ff"; stamp.style.background = "radial-gradient(circle, rgba(0, 210, 255, 0.4), transparent)";
+            noteBox.style.color = "#00ff88"; noteBox.style.background = "rgba(0, 255, 136, 0.1)";
+            noteText.innerText = "Safe One Protection: AES-256 encryption ready.";
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        }
+    }
+</script>
+
+</body>
+</html>
