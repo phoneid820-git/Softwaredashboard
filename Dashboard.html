@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dashboard - Sync Call</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<style>
+:root { --bg: #0a0f1d; --card: rgba(30, 41, 59, 0.4); --green: #25D366; --red: #ff3b30; --glass: rgba(255, 255, 255, 0.05); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; margin: 0; padding: 0; }
+body { background: transparent !important; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+
+.dashboard-container {
+    width: 400px; height: 85vh; max-height: 800px; background: var(--bg);
+    border-radius: 40px; position: relative; display: flex; flex-direction: column;
+    border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 50px 100px rgba(0,0,0,0.9); overflow: hidden;
+    -webkit-app-region: drag;
+}
+
+@media (max-width: 480px) { .dashboard-container { width: 100vw; height: 100vh; max-height: none; border-radius: 0; border: none; } }
+
+.header-actions, .user-list, .right-arrow-btn, .modal-content, .my-dp, .user-card { -webkit-app-region: no-drag; }
+
+.header-section {
+    padding: 15px 20px; display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255, 255, 255, 0.03); border-bottom: 1px solid var(--glass); flex-shrink: 0;
+}
+
+.user-meta { display: flex; align-items: center; gap: 12px; }
+.my-dp { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--green); object-fit: cover; background: #1e293b; }
+.info-labels b { color: white; font-size: 16px; display: block; }
+.info-labels .id-tag { color: var(--green); font-weight: bold; font-size: 11px; }
+
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.logout-btn, .close-app-btn { width: 32px; height: 32px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; }
+.logout-btn { background: rgba(255,255,255,0.1); color: white; }
+.close-app-btn { background: var(--red); color: white; }
+
+.user-list { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 100px; scrollbar-width: none; scroll-behavior: smooth; }
+.user-list::-webkit-scrollbar { display: none; }
+
+.user-card {
+    background: rgba(255, 255, 255, 0.03); border-radius: 20px; padding: 10px 15px;
+    display: flex; align-items: center; margin-bottom: 10px;
+    border: 1px solid var(--glass); backdrop-filter: blur(15px);
+    transition: transform 0.2s ease, background 0.3s;
+    position: relative; cursor: pointer;
+}
+.user-card.deleting { animation: shake 0.3s infinite; border-color: var(--red); }
+@keyframes shake { 0% { transform: rotate(1deg); } 50% { transform: rotate(-1deg); } 100% { transform: rotate(1deg); } }
+
+.user-dp-list { width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--green); object-fit: cover; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: #4a5568; position: absolute; left: 45px; bottom: 10px; border: 2px solid var(--bg); }
+.status-dot.online { background: var(--green); box-shadow: 0 0 5px var(--green); }
+
+.name-box { flex: 1; margin-left: 12px; pointer-events: none; }
+.name-box b { color: white; font-size: 14px; display: block; }
+.user-card-id { color: var(--green); font-weight: bold; font-size: 10px; }
+
+.call-icon-btn { width: 36px; height: 36px; background: rgba(37, 211, 102, 0.15); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--green); }
+
+.right-arrow-btn { position: absolute; bottom: 30px; right: 30px; width: 55px; height: 55px; background: var(--green); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.5s; z-index: 10; }
+.right-arrow-btn.out { transform: scale(0) rotate(180deg); }
+
+.modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(15px); }
+.modal-content { background: #000; width: 280px; padding: 30px 15px; border-radius: 35px; text-align: center; border: 1px solid rgba(37, 211, 102, 0.3); position: relative; animation: popIn 0.3s ease-out; }
+.modal-x-btn { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; background: var(--red); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; }
+.input-container { position: relative; width: 100%; max-width: 200px; margin: 20px auto; }
+.input-container i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--green); }
+.input-container input { width: 100%; padding: 12px 10px 12px 38px; background: #111; border: 1px solid #222; border-radius: 12px; color: white; outline: none; }
+.save-btn { background: var(--green); color: white; border: none; padding: 10px 45px; border-radius: 12px; cursor: pointer; font-weight: bold; }
+@keyframes popIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+</head>
+
+<body>
+<div class="dashboard-container">
+    <div class="header-section">
+        <div class="user-meta">
+            <img src="" id="topDP" class="my-dp">
+            <div class="info-labels">
+                <b id="topName">User</b>
+                <span id="topID" class="id-tag">ID: 00000000</span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="logout-btn" onclick="logout()"><i class="fas fa-power-off"></i></button>
+            <button class="close-app-btn" onclick="closeDashboard()"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <div class="user-list" id="userBox"></div>
+
+    <div class="right-arrow-btn" id="addBtn" onclick="openAdd()">
+        <i class="fas fa-plus" style="color:white; font-size:22px;"></i>
+    </div>
+
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <button class="modal-x-btn" onclick="closeAdd()"><i class="fas fa-times"></i></button>
+            <i class="fas fa-user-shield" style="color:var(--green); font-size:35px; margin-bottom:10px; display:block;"></i>
+            <h3 style="color:white;">Add User</h3>
+            <div class="input-container">
+                <i class="fas fa-id-badge"></i>
+                <input type="text" id="userInput" maxlength="8" placeholder="8 Digit ID" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+            </div>
+            <button class="save-btn" onclick="saveUser()">Safe</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- CONFIGURATION ---
+const SERVER_URL = "http://localhost:3000"; 
+
+const socket = io(SERVER_URL, { transports: ["websocket"] }); 
+const { ipcRenderer } = (typeof require !== 'undefined') ? require('electron') : { ipcRenderer: null };
+
+let MY_ID = localStorage.getItem('myUserID');
+let MY_NAME = localStorage.getItem('myUserName');
+let MY_PIC = localStorage.getItem('myUserPic');
+
+let myPartners = JSON.parse(localStorage.getItem('myPartners')) || [];
+
+window.onload = () => {
+    if (!MY_ID) return window.location.href = "login.html";
+    
+    document.getElementById('topName').innerText = MY_NAME;
+    document.getElementById('topID').innerText = "ID: " + MY_ID;
+    
+    const topDP = document.getElementById('topDP');
+    topDP.src = MY_PIC || "https://via.placeholder.com/150";
+    topDP.onerror = () => topDP.src = "https://via.placeholder.com/150";
+
+    // سرور کو ڈیٹا بھیجتے وقت 'fullName' اور 'profilePic' استعمال کریں
+    socket.emit("user-online", { 
+        id: MY_ID, 
+        fullName: MY_NAME, 
+        profilePic: MY_PIC 
+    });
+    
+    renderList(); 
+};
+
+socket.on("user-found", (user) => {
+    if (user) {
+        if (user.id === MY_ID) {
+            alert("You cannot add yourself!");
+            return;
+        }
+        if (!myPartners.find(p => p.id === user.id)) {
+            // سرور 'name' اور 'pic' بھیج رہا ہے، اسے اپنی لسٹ میں شامل کریں
+            myPartners.push({
+                id: user.id,
+                name: user.name,
+                pic: user.pic
+            });
+            localStorage.setItem('myPartners', JSON.stringify(myPartners));
+            renderList();
+        } else {
+            alert("User already in your list!");
+        }
+    } else {
+        alert("Invalid ID or User not found!");
+    }
+});
+
+socket.on("users-update", (onlineUsers) => {
+    myPartners.forEach(p => {
+        const dot = document.getElementById(`dot-${p.id}`);
+        if (dot) {
+            const isOnline = onlineUsers.some(ou => ou.id === p.id);
+            dot.className = `status-dot ${isOnline ? 'online' : ''}`;
+        }
+    });
+});
+
+function renderList() {
+    const box = document.getElementById('userBox');
+    box.innerHTML = "";
+    
+    if (myPartners.length === 0) {
+        box.innerHTML = `<p style="color:#4a5568; text-align:center; margin-top:50px;">No users added yet.</p>`;
+    }
+
+    myPartners.forEach((u) => {
+        const card = document.createElement("div");
+        card.className = "user-card";
+        card.id = `card-${u.id}`;
+        card.innerHTML = `
+            <img src="${u.pic || 'https://via.placeholder.com/150'}" class="user-dp-list">
+            <div class="status-dot" id="dot-${u.id}"></div>
+            <div class="name-box">
+                <b>${u.name}</b>
+                <span class="user-card-id">ID: ${u.id}</span>
+            </div>
+            <div class="call-icon-btn" onclick="event.stopPropagation(); startCall('${u.id}', '${u.name}', '${u.pic}')">
+                <i class="fas fa-phone-alt"></i>
+            </div>
+        `;
+
+        // Long Press to Delete Logic (Original kept)
+        let timer;
+        const startTimer = () => {
+            timer = setTimeout(() => {
+                card.classList.add('deleting');
+                if(confirm(`Remove ${u.name}?`)) {
+                    myPartners = myPartners.filter(p => p.id !== u.id);
+                    localStorage.setItem('myPartners', JSON.stringify(myPartners));
+                    renderList();
+                } else { card.classList.remove('deleting'); }
+            }, 1500);
+        };
+        const stopTimer = () => clearTimeout(timer);
+
+        card.onmousedown = startTimer;
+        card.onmouseup = stopTimer;
+        card.ontouchstart = startTimer;
+        card.ontouchend = stopTimer;
+
+        box.appendChild(card);
+    });
+}
+
+function openAdd() { 
+    document.getElementById('addBtn').classList.add('out'); 
+    document.getElementById('addModal').style.display = 'flex'; 
+}
+
+function closeAdd() { 
+    document.getElementById('addModal').style.display = 'none'; 
+    document.getElementById('addBtn').classList.remove('out'); 
+    document.getElementById('userInput').value = "";
+}
+
+function saveUser() {
+    const id = document.getElementById('userInput').value;
+    if(id.length < 8) {
+        alert("Enter 8-digit ID.");
+        return;
+    }
+    socket.emit("find-user", id); 
+    closeAdd();
+}
+
+function startCall(id, name, pic) {
+    localStorage.setItem('callingID', id);
+    localStorage.setItem('callingName', name);
+    localStorage.setItem('callingPic', pic);
+    window.location.href = "call.html";
+}
+
+function logout() {
+    localStorage.removeItem('myUserID');
+    localStorage.removeItem('myUserName');
+    localStorage.removeItem('myUserPic');
+    window.location.href = "login.html";
+}
+
+function closeDashboard() {
+    if (ipcRenderer) ipcRenderer.send("close-app");
+    else window.close();
+}
+</script>
+</body>
+</html>

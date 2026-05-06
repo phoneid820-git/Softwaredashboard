@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Voice Call</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+    <style>
+        :root { --glass: rgba(255, 255, 255, 0.1); --red: #ff3b30; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background: #000; height: 100vh; width: 100vw; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+
+        .call-container {
+            width: 100%; height: 100%; max-width: 400px; max-height: 800px;
+            background: linear-gradient(to bottom, #1c2a38, #000);
+            display: flex; flex-direction: column; justify-content: space-around; align-items: center;
+            padding: 40px 20px; position: relative;
+        }
+
+        @media (min-width: 481px) {
+            .call-container { border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; height: 90vh; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        }
+
+        .top-section { text-align: center; width: 100%; }
+        .profile-circle { width: 115px; height: 115px; border-radius: 50%; background: #333; margin: 0 auto 15px; border: 2px solid rgba(255,255,255,0.2); overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
+        .name { font-size: 32px; font-weight: 300; color: white; margin-bottom: 5px; }
+        .timer { font-size: 18px; color: rgba(255,255,255,0.6); }
+
+        .controls-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; width: 100%; max-width: 320px; }
+        .btn-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .action-btn { width: 72px; height: 72px; border-radius: 50%; background: var(--glass); border: none; color: white; font-size: 24px; cursor: pointer; backdrop-filter: blur(20px); }
+        .action-btn:active { transform: scale(0.9); }
+        .action-btn.active { background: white; color: black; }
+        .btn-lbl { font-size: 12px; color: white; opacity: 0.8; }
+        .bottom-section { width: 100%; display: flex; justify-content: center; }
+        .end-call { width: 78px; height: 78px; background: var(--red); border-radius: 50%; border: none; color: white; font-size: 32px; cursor: pointer; }
+        .end-call i { transform: rotate(135deg); }
+    </style>
+</head>
+<body>
+
+<div class="call-container">
+    <div class="top-section">
+        <div class="profile-circle"><img src="" id="calling-dp"></div>
+        <div class="name" id="calling-name">Loading...</div>
+        <div class="timer" id="time">00:00</div>
+    </div>
+
+    <div class="controls-grid">
+        <div class="btn-wrapper">
+            <button class="action-btn" onclick="this.classList.toggle('active')"><i class="fas fa-microphone-slash"></i></button>
+            <span class="btn-lbl">mute</span>
+        </div>
+        <div class="btn-wrapper">
+            <button class="action-btn"><i class="fas fa-th"></i></button>
+            <span class="btn-lbl">keypad</span>
+        </div>
+        <div class="btn-wrapper">
+            <button class="action-btn" onclick="this.classList.toggle('active')"><i class="fas fa-volume-up"></i></button>
+            <span class="btn-lbl">speaker</span>
+        </div>
+    </div>
+
+    <div class="bottom-section">
+        <button class="end-call" onclick="endCallSession()"><i class="fas fa-phone"></i></button>
+    </div>
+</div>
+
+<script>
+const SERVER_URL = "http://localhost:3000"; // Render URL یہاں ڈالیں
+const socket = io(SERVER_URL, { transports: ["websocket"] });
+
+const myUserID = localStorage.getItem("myUserID");
+const callingID = localStorage.getItem("callingID");
+const callingName = localStorage.getItem("callingName");
+const callingPic = localStorage.getItem("callingPic");
+
+socket.emit("join-call", { from: myUserID, to: callingID });
+
+socket.on("call-ended", () => {
+    endCallSession(false);
+});
+
+window.onload = () => {
+    document.getElementById("calling-name").innerText = callingName || "User";
+    const dp = document.getElementById("calling-dp");
+    dp.src = callingPic || "https://via.placeholder.com/150";
+    dp.onerror = () => dp.src = "https://via.placeholder.com/150";
+    startTimer();
+};
+
+function startTimer() {
+    let s = 0;
+    window.timer = setInterval(() => {
+        s++;
+        let m = Math.floor(s / 60);
+        let sec = s % 60;
+        document.getElementById("time").innerText = `${m<10?'0'+m:m}:${sec<10?'0'+sec:sec}`;
+    }, 1000);
+}
+
+function endCallSession(notifyServer = true) {
+    if (notifyServer) {
+        socket.emit("end-call", { from: myUserID, to: callingID });
+    }
+    if(window.timer) clearInterval(window.timer);
+    window.location.href = "dashboard.html";
+}
+</script>
+</body>
+</html>
